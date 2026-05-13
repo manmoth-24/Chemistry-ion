@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>化学暗記マスター</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
+        h1 { color: #2c3e50; font-size: 24px; }
+        .mode-selector { margin-bottom: 20px; }
+        .card { font-size: 48px; font-weight: bold; margin: 40px 0; min-height: 100px; display: flex; align-items: center; justify-content: center; color: #3498db; }
+        .input-area { margin-bottom: 20px; }
+        input { padding: 10px; font-size: 18px; border: 2px solid #ddd; border-radius: 5px; width: 150px; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #2ecc71; color: white; border: none; border-radius: 5px; transition: 0.3s; }
+        button:hover { background-color: #27ae60; }
+        #feedback { font-weight: bold; margin-top: 15px; height: 20px; }
+        .stats { margin-top: 20px; font-size: 14px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🧪 化学暗記マスター</h1>
+    
+    <div class="mode-selector">
+        <button onclick="setMode('ion')">イオンを覚える</button>
+        <button onclick="setMode('periodic')">周期表を覚える</button>
+    </div>
+
+    <div id="mode-title">モードを選択してください</div>
+    <div class="card" id="question-text">?</div>
+
+    <div class="input-area">
+        <input type="text" id="answer-input" placeholder="答えを入力" onkeydown="if(event.key==='Enter') checkAnswer()">
+        <button onclick="checkAnswer()">判定</button>
+    </div>
+
+    <div id="feedback"></div>
+    <div class="stats" id="stats-text">正解数: 0 / 0</div>
+    <button style="background-color: #95a5a6; margin-top: 20px;" onclick="nextQuestion()">スキップ</button>
+</div>
+
+<script>
+    // データの定義
+    const data = {
+        ion: [
+            { q: "水素イオン", a: "H+" }, { q: "リチウムイオン", a: "Li+" }, { q: "ナトリウムイオン", a: "Na+" },
+            { q: "カリウムイオン", a: "K+" }, { q: "銀イオン", a: "Ag+" }, { q: "銅(I)イオン", a: "Cu+" },
+            { q: "アンモニウムイオン", a: "NH4+" }, { q: "オキソニウムイオン", a: "H3O+" },
+            { q: "マグネシウムイオン", a: "Mg2+" }, { q: "カルシウムイオン", a: "Ca2+" }, { q: "バリウムイオン", a: "Ba2+" },
+            { q: "亜鉛イオン", a: "Zn2+" }, { q: "鉄(II)イオン", a: "Fe2+" }, { q: "銅(II)イオン", a: "Cu2+" },
+            { q: "フッ化物イオン", a: "F-" }, { q: "塩化物イオン", a: "Cl-" }, { q: "臭化物イオン", a: "Br-" },
+            { q: "水酸化物イオン", a: "OH-" }, { q: "硝酸イオン", a: "NO3-" }, { q: "酢酸イオン", a: "CH3COO-" },
+            { q: "炭酸水素イオン", a: "HCO3-" }, { q: "シアン化物イオン", a: "CN-" }, { q: "過マンガン酸イオン", a: "MnO4-" },
+            { q: "酸化物イオン", a: "O2-" }, { q: "硫化物イオン", a: "S2-" }, { q: "炭酸イオン", a: "CO32-" },
+            { q: "硫酸イオン", a: "SO42-" }, { q: "リン酸イオン", a: "PO43-" }
+        ],
+        periodic: [
+            { q: "原子番号1", a: "H" }, { q: "原子番号2", a: "He" }, { q: "原子番号3", a: "Li" },
+            { q: "原子番号6 (炭素)", a: "C" }, { q: "原子番号7 (窒素)", a: "N" }, { q: "原子番号8 (酸素)", a: "O" },
+            { q: "原子番号11 (ナトリウム)", a: "Na" }, { q: "原子番号13 (アルミニウム)", a: "Al" },
+            { q: "原子番号17 (塩素)", a: "Cl" }, { q: "原子番号20 (カルシウム)", a: "Ca" },
+            { q: "鉄", a: "Fe" }, { q: "銅", a: "Cu" }, { q: "亜鉛", a: "Zn" }, { q: "銀", a: "Ag" }
+        ]
+    };
+
+    let currentMode = 'ion';
+    let currentQuestion = {};
+    let correctCount = 0;
+    let totalCount = 0;
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('mode-title').innerText = mode === 'ion' ? '【イオン式クイズ】 例: Na+' : '【元素記号クイズ】 例: Fe';
+        correctCount = 0;
+        totalCount = 0;
+        updateStats();
+        nextQuestion();
+    }
+
+    function nextQuestion() {
+        const pool = data[currentMode];
+        currentQuestion = pool[Math.floor(Math.random() * pool.length)];
+        document.getElementById('question-text').innerText = currentQuestion.q;
+        document.getElementById('answer-input').value = '';
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('answer-input').focus();
+    }
+
+    function checkAnswer() {
+        const userInput = document.getElementById('answer-input').value.trim();
+        const feedback = document.getElementById('feedback');
+        
+        totalCount++;
+        if (userInput.toLowerCase() === currentQuestion.a.toLowerCase()) {
+            feedback.innerText = "正解！ ✨";
+            feedback.style.color = "#2ecc71";
+            correctCount++;
+            setTimeout(nextQuestion, 1000);
+        } else {
+            feedback.innerText = `残念！ 答えは ${currentQuestion.a}`;
+            feedback.style.color = "#e74c3c";
+        }
+        updateStats();
+    }
+
+    function updateStats() {
+        document.getElementById('stats-text').innerText = `正解数: ${correctCount} / ${totalCount}`;
+    }
+
+    // 初期起動
+    setMode('ion');
+</script>
+
+</body>
+</html>
